@@ -125,7 +125,7 @@ export const segments = [
         label: 'Quarter Arc A',
         category: 'arcs',
         footprint: [1, 1],
-        allowedRotations: [0, 90, 180, 270],
+        allowedRotations: [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345, 360],
         element: 'path',
         filled: false,
         // Endpoint (538.98,994.13) → (620.26,912.85). Square geometry, fills 1×1 cell.
@@ -140,7 +140,7 @@ export const segments = [
         label: 'Quarter Arc B',
         category: 'arcs',
         footprint: [1, 1],
-        allowedRotations: [0, 90, 180, 270],
+        allowedRotations: [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345, 360],
         element: 'path',
         filled: false,
         // Endpoint (642.88,912.86) → (724.16,994.14). Square geometry, fills 1×1 cell.
@@ -354,7 +354,7 @@ export const segments = [
         label: 'Straight (¼u)',
         category: 'straights',
         footprint: [1, 1],
-        allowedRotations: [0, 90, 180, 270],
+        allowedRotations: [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345, 360],
         element: 'line',
         filled: false,
         // vbX = lineX → x=0 (left edge). vbH=90 (normalized) → line spans 22.53/90 ≈ ¼ of cell
@@ -371,7 +371,7 @@ export const segments = [
         label: 'Straight (½u)',
         category: 'straights',
         footprint: [1, 1],
-        allowedRotations: [0, 90, 180, 270],
+        allowedRotations: [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345, 360],
         element: 'line',
         filled: false,
         // vbH=90 (normalized) → line spans 45.06/90 ≈ ½ of cell
@@ -388,7 +388,7 @@ export const segments = [
         label: 'Straight (1u)',
         category: 'straights',
         footprint: [1, 1],
-        allowedRotations: [0, 90, 180, 270],
+        allowedRotations: [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345, 360],
         element: 'line',
         filled: false,
         viewBox: '1020.35 1205.55 17 90',
@@ -404,7 +404,7 @@ export const segments = [
         label: 'Straight V (2u)',
         category: 'straights',
         footprint: [1, 2],
-        allowedRotations: [0, 180],
+        allowedRotations: [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345, 360],
         element: 'line',
         filled: false,
         // Line spans full 2u height (180px), sits at left edge of 1×2 footprint
@@ -421,7 +421,7 @@ export const segments = [
         label: 'Straight H (2u)',
         category: 'straights',
         footprint: [2, 1],
-        allowedRotations: [0, 180],
+        allowedRotations: [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345, 360],
         element: 'line',
         filled: false,
         // Normalized coords: horizontal line at y=0 (top edge) spanning 180px (2u)
