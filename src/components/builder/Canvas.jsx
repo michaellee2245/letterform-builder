@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useRef } from 'react'
 import { segments as segmentDefs } from '@/lib/segments'
 
 export const CELL_SIZE = 80
-export const COLS = 7
+export const COLS = 8
 export const ROWS = 8
 
 function computeTransform(vbStr, dx, dy, dw, dh) {
@@ -97,9 +97,7 @@ function PlacedSegment({
       }}
       style={{ cursor: isSelected ? 'grab' : 'pointer' }}
     >
-      <g clipPath={`url(#clip-${placementId})`}>
-        {renderSegmentGeometry({ segment, pixelX: x, pixelY: y, rotation, strokeWidth, stencilGap, cellSize, color })}
-      </g>
+      {renderSegmentGeometry({ segment, pixelX: x, pixelY: y, rotation, strokeWidth, stencilGap, cellSize, color })}
 
       {isSelected && (
         <rect
@@ -142,12 +140,7 @@ function GhostSegment({ segment, pixelX, pixelY, rotation, strokeWidth, stencilG
         strokeWidth="0.5"
         strokeDasharray="4 3"
       />
-      <clipPath id="ghost-clip">
-        <rect x={pixelX} y={pixelY} width={clipW} height={clipH} />
-      </clipPath>
-      <g clipPath="url(#ghost-clip)">
-        {renderSegmentGeometry({ segment, pixelX, pixelY, rotation, strokeWidth, stencilGap, cellSize, color })}
-      </g>
+      {renderSegmentGeometry({ segment, pixelX, pixelY, rotation, strokeWidth, stencilGap, cellSize, color })}
     </g>
   )
 }
@@ -420,24 +413,6 @@ export default function Canvas({
         cursor: isDragging ? 'grabbing' : activeSegment ? 'crosshair' : 'default',
       }}
     >
-      <defs>
-        {placedSegments.map(ps => {
-          const seg = segmentDefs.find(s => s.id === ps.segmentId)
-          if (!seg) return null
-          const [fpCols, fpRows] = seg.footprint
-          return (
-            <clipPath key={ps.placementId} id={`clip-${ps.placementId}`}>
-              <rect
-                x={ps.x}
-                y={ps.y}
-                width={fpCols * CELL_SIZE}
-                height={fpRows * CELL_SIZE}
-              />
-            </clipPath>
-          )
-        })}
-      </defs>
-
       <rect width={width} height={height} fill="#0f0f0f" />
 
       {showGrid && (
