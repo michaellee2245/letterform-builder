@@ -44,7 +44,7 @@ export const segments = [
         footprint: [2, 2],
         allowedRotations: [0],
         element: 'path',
-        filled: true,
+        filled: false,
         viewBox: '205.09 691.23 179.88 179.88',
         attrs: {
             d: 'M295.03,708.23c40.22,0,72.94,32.72,72.94,72.94s-32.72,72.94-72.94,72.94-72.94-32.72-72.94-72.94,32.72-72.94,72.94-72.94M295.03,691.23c-49.67,0-89.94,40.27-89.94,89.94s40.27,89.94,89.94,89.94,89.94-40.27,89.94-89.94-40.27-89.94-89.94-89.94h0Z',
@@ -67,22 +67,22 @@ export const segments = [
         },
     },
 
-    // ── SQUARES ────────────────────────────────────────────────────
+    // // ── SQUARES ────────────────────────────────────────────────────
 
-    {
-        id: 'square-1u',
-        label: 'Square (1u)',
-        category: 'squares',
-        footprint: [1, 1],
-        allowedRotations: [0],
-        element: 'path',
-        filled: true,
-        viewBox: '227.02 565.64 90.45 90.45',
-        attrs: {
-            d: 'M300.47,582.64v56.45h-56.45v-56.45h56.45M317.47,565.64h-90.45v90.45h90.45v-90.45h0Z',
-            fill: 'currentColor',
-        },
-    },
+    // {
+    //     id: 'square-1u',
+    //     label: 'Square (1u)',
+    //     category: 'squares',
+    //     footprint: [1, 1],
+    //     allowedRotations: [0],
+    //     element: 'path',
+    //     filled: true,
+    //     viewBox: '227.02 565.64 90.45 90.45',
+    //     attrs: {
+    //         d: 'M300.47,582.64v56.45h-56.45v-56.45h56.45M317.47,565.64h-90.45v90.45h90.45v-90.45h0Z',
+    //         fill: 'currentColor',
+    //     },
+    // },
 
     // ── ARCS ───────────────────────────────────────────────────────
     // viewBox = pure geometry bounds (no stroke padding).
