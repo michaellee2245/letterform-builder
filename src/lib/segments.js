@@ -150,35 +150,35 @@ export const segments = [
         },
     },
 
-    {
-        id: 'arch-2u',
-        label: 'Arch (2u)',
-        category: 'arcs',
-        footprint: [2, 2],
-        allowedRotations: [0, 90, 180, 270],
-        element: 'path',
-        filled: false,
-        // Endpoints at (321.42,1077.39) and (484.74,1077.39), arch top at 906.24.
-        viewBox: '321.42 906.24 163.32 171.15',
-        attrs: {
-            d: 'M321.42,1077.39c0-94.52,36.56-171.15,81.66-171.15s81.66,76.63,81.66,171.15',
-        },
-    },
+    // {
+    //     id: 'arch-2u',
+    //     label: 'Arch (2u)',
+    //     category: 'arcs',
+    //     footprint: [2, 2],
+    //     allowedRotations: [0, 90, 180, 270],
+    //     element: 'path',
+    //     filled: false,
+    //     // Endpoints at (321.42,1077.39) and (484.74,1077.39), arch top at 906.24.
+    //     viewBox: '321.42 906.24 163.32 171.15',
+    //     attrs: {
+    //         d: 'M321.42,1077.39c0-94.52,36.56-171.15,81.66-171.15s81.66,76.63,81.66,171.15',
+    //     },
+    // },
 
-    {
-        id: 'arch-1u',
-        label: 'Arch (1u)',
-        category: 'arcs',
-        footprint: [1, 1],
-        allowedRotations: [0, 90, 180, 270],
-        element: 'path',
-        filled: false,
-        // Endpoints at (221.28,1008.51) and (295.22,1008.51), arch top at 927.47.
-        viewBox: '221.28 927.47 73.94 81.04',
-        attrs: {
-            d: 'M221.28,1008.51c0-44.76,16.55-81.04,36.97-81.04s36.97,36.28,36.97,81.04',
-        },
-    },
+    // {
+    //     id: 'arch-1u',
+    //     label: 'Arch (1u)',
+    //     category: 'arcs',
+    //     footprint: [1, 1],
+    //     allowedRotations: [0, 90, 180, 270],
+    //     element: 'path',
+    //     filled: false,
+    //     // Endpoints at (221.28,1008.51) and (295.22,1008.51), arch top at 927.47.
+    //     viewBox: '221.28 927.47 73.94 81.04',
+    //     attrs: {
+    //         d: 'M221.28,1008.51c0-44.76,16.55-81.04,36.97-81.04s36.97,36.28,36.97,81.04',
+    //     },
+    // },
 
     // ── CORNERS / POLYLINES ────────────────────────────────────────
     // viewBox = exact geometry bounds. All four polyline endpoints map
