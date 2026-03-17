@@ -303,5 +303,9 @@ function BuilderPage() {
 }
 
 export default function BuildPageWrapper() {
-  return <Suspense><BuilderPage /></Suspense>
+  return (
+    <Suspense>
+      <BuilderPage />
+    </Suspense>
+  )
 }
