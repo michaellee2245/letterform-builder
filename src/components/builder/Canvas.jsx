@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
 import { segments as segmentDefs } from '@/lib/segments'
 
-export const CELL_SIZE = 80
+export const CELL_SIZE = 90
 export const COLS = 8
 export const ROWS = 8
 

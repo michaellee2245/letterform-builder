@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef, Suspense } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Canvas from '@/components/builder/Canvas'
 import ToolPanel from '@/components/builder/ToolPanel'
 import { segments as allSegments, getSegmentById, nextRotation, DEFAULT_STROKE } from '@/lib/segments'
+import SubmitModal from '@/components/builder/SubmitModal'
 
-function BuilderPage() {
+export default function BuilderPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const letter = searchParams.get('letter') || 'A'
@@ -62,6 +63,7 @@ function BuilderPage() {
 
   // ── Selection + tool state (not tracked in history) ──────────────────────────
   const [selectedPlacementId, setSelectedPlacementId] = useState(null)
+  const [showSubmitModal, setShowSubmitModal]       = useState(false)
   const [activeSegment, setActiveSegmentRaw]    = useState(null)
   const [activeRotation, setActiveRotation]     = useState(0)
   const [showGrid, setShowGrid]                 = useState(true)
@@ -154,6 +156,12 @@ function BuilderPage() {
     setActiveSegmentRaw(null)
     setActiveRotation(0)
   }, [commit])
+
+  // ── Submit modal ─────────────────────────────────────────────────────────────
+  const handleSubmitSuccess = useCallback((newId) => {
+    setShowSubmitModal(false)
+    router.push(`/archive?highlight=${newId}`)
+  }, [router])
 
   // ── Keyboard shortcuts ────────────────────────────────────────────────────────
   //   Cmd/Ctrl + Z           — undo
@@ -280,18 +288,21 @@ function BuilderPage() {
         onStrokeWidthChange={handleStrokeWidthChange}
         onRotateSelected={handleRotateSelected}
         onDeleteSelected={handleDeleteSelected}
+        onSubmit={() => setShowSubmitModal(true)}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onClearCanvas={handleClearCanvas}
       />
+      {/* Submit modal */}
+      {showSubmitModal && (
+        <SubmitModal
+          letter={letter}
+          placedSegments={placedSegments}
+          stencilGap={stencilGap}
+          onClose={() => setShowSubmitModal(false)}
+          onSuccess={handleSubmitSuccess}
+        />
+      )}
     </div>
-  )
-}
-
-export default function BuilderPageWrapper() {
-  return (
-    <Suspense>
-      <BuilderPage />
-    </Suspense>
   )
 }

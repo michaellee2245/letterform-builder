@@ -24,6 +24,7 @@ export default function ToolPanel({
   onStrokeWidthChange,
   onRotateSelected,
   onDeleteSelected,
+  onSubmit,
   onClearCanvas,
 }) {
   const [drawerOpen, setDrawerOpen] = useState(true)
@@ -55,7 +56,7 @@ export default function ToolPanel({
 
       {/* Snap toggle */}
       <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <ToggleRow label="SNAP TO GRID" value={snapToGrid} onToggle={onToggleSnap} accent={!snapToGrid} />
+        <ToggleRow label="SNAP" value={snapToGrid} onToggle={onToggleSnap} accent={!snapToGrid} />
       </div>
 
       {/* Undo / Redo */}
@@ -232,18 +233,20 @@ export default function ToolPanel({
 
       {/* Footer */}
       <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <button style={{
-          padding: '8px 0',
-          background: 'white',
-          color: 'black',
-          border: 'none',
-          borderRadius: 3,
-          fontSize: 8,
-          fontWeight: 700,
-          letterSpacing: '0.2em',
-          cursor: 'pointer',
-          fontFamily: 'monospace',
-        }}>
+        <button
+          onClick={onSubmit}
+          style={{
+            padding: '8px 0',
+            background: 'white',
+            color: 'black',
+            border: 'none',
+            borderRadius: 3,
+            fontSize: 8,
+            fontWeight: 700,
+            letterSpacing: '0.2em',
+            cursor: 'pointer',
+            fontFamily: 'monospace',
+          }}>
           SUBMIT LETTERFORM →
         </button>
         <button
@@ -290,7 +293,7 @@ function ToggleRow({ label, value, onToggle, accent }) {
           transition: 'all 0.12s',
         }}
       >
-        {value ? 'ON' : 'OFF'}
+        {value ? 'ON' : 'PIXEL'}
       </button>
     </div>
   )
