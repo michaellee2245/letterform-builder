@@ -38,6 +38,7 @@ function formatDate(date) {
 export default function SubmitModal({
   letter,
   placedSegments,
+  freehandStrokes = [],
   stencilGap,
   onClose,
   onSuccess,
@@ -58,7 +59,7 @@ export default function SubmitModal({
     setError(null)
 
     try {
-      const svgData = exportToSVG(placedSegments, stencilGap, letter)
+      const svgData = exportToSVG(placedSegments, freehandStrokes, stencilGap, letter)
 
       const { data, error: dbError } = await supabase
         .from('letterforms')

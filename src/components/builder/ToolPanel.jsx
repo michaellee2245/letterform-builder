@@ -8,6 +8,8 @@ export default function ToolPanel({
   activeSegment,
   activeRotation,
   selectedPlacement,
+  selectedStroke,
+  brushMode,
   showGrid,
   snapToGrid,
   stencilGap,
@@ -16,6 +18,7 @@ export default function ToolPanel({
   canRedo,
   onSelectSegment,
   onRotateActive,
+  onToggleBrush,
   onToggleGrid,
   onToggleSnap,
   onUndo,
@@ -57,6 +60,37 @@ export default function ToolPanel({
       {/* Snap toggle */}
       <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <ToggleRow label="SNAP" value={snapToGrid} onToggle={onToggleSnap} accent={!snapToGrid} />
+      </div>
+
+      {/* Brush mode toggle */}
+      <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 8, color: brushMode ? '#60aaff' : 'rgba(255,255,255,0.2)', letterSpacing: '0.2em' }}>
+            BRUSH MODE
+          </span>
+          <button
+            onClick={onToggleBrush}
+            style={{
+              padding: '4px 10px',
+              background: brushMode ? 'rgba(96,170,255,0.12)' : 'transparent',
+              border: `1px solid ${brushMode ? 'rgba(96,170,255,0.4)' : 'rgba(255,255,255,0.06)'}`,
+              borderRadius: 3,
+              color: brushMode ? '#60aaff' : 'rgba(255,255,255,0.2)',
+              fontSize: 8,
+              letterSpacing: '0.15em',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              transition: 'all 0.12s',
+            }}
+          >
+            {brushMode ? 'ON' : 'OFF'}
+          </button>
+        </div>
+        {brushMode && (
+          <p style={{ fontSize: 7, color: 'rgba(96,170,255,0.4)', margin: '5px 0 0', letterSpacing: '0.1em' }}>
+            DRAW FREELY — B TO TOGGLE
+          </p>
+        )}
       </div>
 
       {/* Undo / Redo */}
@@ -101,6 +135,13 @@ export default function ToolPanel({
         <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 6 }}>
           <ActionButton label="↻ ROTATE" onClick={onRotateSelected} />
           <ActionButton label="× DELETE" onClick={onDeleteSelected} danger />
+        </div>
+      )}
+
+      {/* Selected stroke actions */}
+      {selectedStroke && (
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 6 }}>
+          <ActionButton label="× DELETE STROKE" onClick={onDeleteSelected} danger />
         </div>
       )}
 
@@ -190,14 +231,14 @@ export default function ToolPanel({
 
               return (
                 <div key={categoryKey} style={{ marginBottom: 18 }}>
-                  <p style={{ fontSize: 7, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.2em', margin: '0 0 8px' }}>
+                  <p style={{ fontSize: 7, color: 'rgba(255,255,255,0.18)', letterSpacing: '0.2em', margin: '0 0 8px' }}>
                     {CATEGORIES[categoryKey].toUpperCase()}
                   </p>
 
                   {hasSizeVariants ? (
                     sizeKeys.map(sizeKey => (
                       <div key={sizeKey} style={{ marginBottom: 10 }}>
-                        <p style={{ fontSize: 7, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.12em', margin: '0 0 5px 1px' }}>
+                        <p style={{ fontSize: 7, color: 'rgba(255,255,255,0.08)', letterSpacing: '0.12em', margin: '0 0 5px 1px' }}>
                           {sizeKey} GRID
                         </p>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>

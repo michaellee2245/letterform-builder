@@ -70,15 +70,35 @@ function renderSegmentToSVG({ segment, pixelX, pixelY, rotation, strokeWidth, st
   </g>`
 }
 
-export function exportToSVG(placedSegments, stencilGap = 0, letter = '') {
-    if (placedSegments.length === 0) {
+export function exportToSVG(placedSegments, freehandStrokes = [], stencilGap = 0, letter = '') {
+    if (placedSegments.length === 0 && freehandStrokes.length === 0) {
         return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>`
     }
 
     // ── Compute tight bounding box around all placed segments ──────────────────
-    // Each segment occupies [fpCols * CELL_SIZE, fpRows * CELL_SIZE] starting at (x, y).
-    // Add a small padding so strokes on the outer edge aren't clipped.
-    const PAD = 4
+    // Segments can be rotated, so we can't just use footprint rectangles — a
+    // rotated segment's visual bounds extend beyond its declared footprint.
+    //
+    // For each placement we compute the axis-aligned bounding box of the
+    // rotated footprint rectangle, then union all of them together.
+    //
+    // rotatedAABB: given a rect (x, y, w, h) rotated `deg` around its center,
+    // returns the axis-aligned bounding box of all four rotated corners.
+    function rotatedAABB(x, y, w, h, deg) {
+        const cx = x + w / 2
+        const cy = y + h / 2
+        const rad = deg * Math.PI / 180
+        const cos = Math.abs(Math.cos(rad))
+        const sin = Math.abs(Math.sin(rad))
+        // Width and height of the axis-aligned box that contains the rotated rect
+        const rw = w * cos + h * sin
+        const rh = w * sin + h * cos
+        return { x: cx - rw / 2, y: cy - rh / 2, w: rw, h: rh }
+    }
+
+    // Stroke padding so the outer edge of the stroke isn't clipped
+    const MAX_STROKE = Math.max(...placedSegments.map(ps => ps.strokeWidth || 17))
+    const PAD = MAX_STROKE / 2 + 4
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
 
@@ -86,14 +106,20 @@ export function exportToSVG(placedSegments, stencilGap = 0, letter = '') {
         const seg = getSegmentById(ps.segmentId)
         if (!seg) return
         const [fpCols, fpRows] = seg.footprint
-        const x0 = ps.x - PAD
-        const y0 = ps.y - PAD
-        const x1 = ps.x + fpCols * CELL_SIZE + PAD
-        const y1 = ps.y + fpRows * CELL_SIZE + PAD
-        if (x0 < minX) minX = x0
-        if (y0 < minY) minY = y0
-        if (x1 > maxX) maxX = x1
-        if (y1 > maxY) maxY = y1
+        const bbox = rotatedAABB(ps.x, ps.y, fpCols * CELL_SIZE, fpRows * CELL_SIZE, ps.rotation)
+        if (bbox.x - PAD < minX) minX = bbox.x - PAD
+        if (bbox.y - PAD < minY) minY = bbox.y - PAD
+        if (bbox.x + bbox.w + PAD > maxX) maxX = bbox.x + bbox.w + PAD
+        if (bbox.y + bbox.h + PAD > maxY) maxY = bbox.y + bbox.h + PAD
+    })
+
+    // Include freehand stroke bboxes — stored at draw time so no parsing needed
+    freehandStrokes.forEach(stroke => {
+        const sw = (stroke.strokeWidth || 17) / 2
+        if (stroke.minX - sw - PAD < minX) minX = stroke.minX - sw - PAD
+        if (stroke.minY - sw - PAD < minY) minY = stroke.minY - sw - PAD
+        if (stroke.maxX + sw + PAD > maxX) maxX = stroke.maxX + sw + PAD
+        if (stroke.maxY + sw + PAD > maxY) maxY = stroke.maxY + sw + PAD
     })
 
     const vbW = maxX - minX
@@ -113,6 +139,11 @@ export function exportToSVG(placedSegments, stencilGap = 0, letter = '') {
         })
     }).join('\n')
 
+    // Render freehand strokes
+    const strokeSVGs = freehandStrokes.map(stroke =>
+        `  <path d="${stroke.d}" fill="none" stroke="#000000" stroke-width="${stroke.strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/>`
+    ).join('\n')
+
     // viewBox is the tight bounding box — no fixed width/height on the root element.
     // This lets the SVG scale to any container and centers via preserveAspectRatio.
     return `<svg
@@ -121,5 +152,6 @@ export function exportToSVG(placedSegments, stencilGap = 0, letter = '') {
 >
   <!-- Letterform Builder — ${letter} -->
 ${segmentSVGs}
+${strokeSVGs}
 </svg>`
 }

@@ -7,6 +7,31 @@ export const CELL_SIZE = 90
 export const COLS = 8
 export const ROWS = 8
 
+// ─── Catmull-Rom → cubic bezier ──────────────────────────────────────────────
+// Converts an array of {x,y} points into a smooth SVG path string.
+// Each set of 4 consecutive points produces one cubic bezier segment.
+// First and last points are duplicated so the curve passes through all points.
+
+function catmullRomToBezier(points) {
+  if (points.length < 2) return ''
+  if (points.length === 2) {
+    return `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)} L ${points[1].x.toFixed(1)},${points[1].y.toFixed(1)}`
+  }
+  const pts = [points[0], ...points, points[points.length - 1]]
+  let d = `M ${pts[1].x.toFixed(1)},${pts[1].y.toFixed(1)}`
+  for (let i = 1; i < pts.length - 2; i++) {
+    const p0 = pts[i - 1], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2]
+    const cp1x = p1.x + (p2.x - p0.x) / 6
+    const cp1y = p1.y + (p2.y - p0.y) / 6
+    const cp2x = p2.x - (p3.x - p1.x) / 6
+    const cp2y = p2.y - (p3.y - p1.y) / 6
+    d += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`
+  }
+  return d
+}
+
+// ─── computeTransform ─────────────────────────────────────────────────────────
+
 function computeTransform(vbStr, dx, dy, dw, dh) {
   const [vbX, vbY, vbW, vbH] = vbStr.split(' ').map(Number)
   const sx = dw / vbW
@@ -17,28 +42,21 @@ function computeTransform(vbStr, dx, dy, dw, dh) {
 }
 
 // ─── renderSegmentGeometry ────────────────────────────────────────────────────
-// Takes pixel origin (pixelX, pixelY) — the top-left corner of the footprint
-// in SVG coordinate space. Works for both snapped and free-placed segments.
 
 function renderSegmentGeometry({ segment, pixelX, pixelY, rotation, strokeWidth, stencilGap, cellSize, color }) {
   const { element, attrs, viewBox: vbStr, footprint, filled } = segment
   const [fpCols, fpRows] = footprint
   const gap = stencilGap
-
   const clipW = fpCols * cellSize
   const clipH = fpRows * cellSize
-
   const strokePad = filled ? 0 : strokeWidth / 2
   const dx = pixelX + gap + strokePad
   const dy = pixelY + gap + strokePad
   const dw = clipW - 2 * (gap + strokePad)
   const dh = clipH - 2 * (gap + strokePad)
-
   const { sx, sy, tx, ty } = computeTransform(vbStr, dx, dy, dw, dh)
-
   const cx = pixelX + clipW / 2
   const cy = pixelY + clipH / 2
-
   const elementProps = {
     ...attrs,
     ...(filled
@@ -54,9 +72,7 @@ function renderSegmentGeometry({ segment, pixelX, pixelY, rotation, strokeWidth,
         }
     ),
   }
-
   const El = element
-
   return (
     <g transform={`rotate(${rotation}, ${cx}, ${cy})`}>
       <g transform={`translate(${tx.toFixed(3)}, ${ty.toFixed(3)}) scale(${sx.toFixed(5)}, ${sy.toFixed(5)})`}>
@@ -68,49 +84,29 @@ function renderSegmentGeometry({ segment, pixelX, pixelY, rotation, strokeWidth,
 
 // ─── PlacedSegment ────────────────────────────────────────────────────────────
 
-function PlacedSegment({
-  placement, segment, cellSize, stencilGap,
-  isSelected, isDragging,
-  onClick, onDragStart,
-}) {
+function PlacedSegment({ placement, segment, cellSize, stencilGap, isSelected, isDragging, onClick, onDragStart }) {
   const { placementId, x, y, rotation, strokeWidth } = placement
   const { footprint } = segment
   const [fpCols, fpRows] = footprint
-
   const clipW = fpCols * cellSize
   const clipH = fpRows * cellSize
-
   const color = isSelected ? '#60aaff' : 'white'
   const opacity = isDragging ? 0.25 : 1
-
   return (
     <g
       opacity={opacity}
       onClick={(e) => { e.stopPropagation(); onClick?.(placementId) }}
       onMouseDown={(e) => {
         if (e.button !== 0) return
-        if (isSelected) {
-          e.stopPropagation()
-          e.preventDefault()
-          onDragStart?.(placementId, e)
-        }
+        if (isSelected) { e.stopPropagation(); e.preventDefault(); onDragStart?.(placementId, e) }
       }}
       style={{ cursor: isSelected ? 'grab' : 'pointer' }}
     >
       {renderSegmentGeometry({ segment, pixelX: x, pixelY: y, rotation, strokeWidth, stencilGap, cellSize, color })}
-
       {isSelected && (
-        <rect
-          x={x + 1}
-          y={y + 1}
-          width={clipW - 2}
-          height={clipH - 2}
-          fill="none"
-          stroke="#60aaff"
-          strokeWidth="0.75"
-          strokeDasharray="4 3"
-          style={{ pointerEvents: 'none' }}
-        />
+        <rect x={x + 1} y={y + 1} width={clipW - 2} height={clipH - 2}
+          fill="none" stroke="#60aaff" strokeWidth="0.75" strokeDasharray="4 3"
+          style={{ pointerEvents: 'none' }} />
       )}
     </g>
   )
@@ -121,25 +117,15 @@ function PlacedSegment({
 function GhostSegment({ segment, pixelX, pixelY, rotation, strokeWidth, stencilGap, cellSize, fits }) {
   const { footprint } = segment
   const [fpCols, fpRows] = footprint
-
   const clipW = fpCols * cellSize
   const clipH = fpRows * cellSize
-
   const color = fits ? 'rgba(255,255,255,0.35)' : 'rgba(255,80,80,0.45)'
   const borderColor = fits ? 'rgba(255,255,255,0.15)' : 'rgba(255,80,80,0.3)'
-
   return (
     <g style={{ pointerEvents: 'none' }}>
-      <rect
-        x={pixelX + 1}
-        y={pixelY + 1}
-        width={clipW - 2}
-        height={clipH - 2}
+      <rect x={pixelX + 1} y={pixelY + 1} width={clipW - 2} height={clipH - 2}
         fill={fits ? 'rgba(255,255,255,0.02)' : 'rgba(255,80,80,0.04)'}
-        stroke={borderColor}
-        strokeWidth="0.5"
-        strokeDasharray="4 3"
-      />
+        stroke={borderColor} strokeWidth="0.5" strokeDasharray="4 3" />
       {renderSegmentGeometry({ segment, pixelX, pixelY, rotation, strokeWidth, stencilGap, cellSize, color })}
     </g>
   )
@@ -149,24 +135,33 @@ function GhostSegment({ segment, pixelX, pixelY, rotation, strokeWidth, stencilG
 
 export default function Canvas({
   placedSegments = [],
+  freehandStrokes = [],
   activeSegment = null,
   activeRotation = 0,
   selectedPlacementId = null,
+  selectedStrokeId = null,
+  brushMode = false,
   showGrid = true,
   snapToGrid = true,
   stencilGap = 0,
   defaultStrokeWidth = 17,
   onPlace,
   onSelect,
+  onSelectStroke,
   onMove,
+  onAddStroke,
 }) {
-  // hoverPos stores either { col, row } when snapping, or { x, y } pixels when free
-  const [hoverPos, setHoverPos] = useState(null)
+  const [hoverPos, setHoverPos]   = useState(null)
+  const dragRef                   = useRef(null)
+  const [dragPos, setDragPos]     = useState(null)
 
-  const dragRef = useRef(null)
-  const [dragPos, setDragPos] = useState(null)
+  // Brush drawing state
+  const isDrawingRef  = useRef(false)
+  const pointsRef     = useRef([])
+  const svgRef        = useRef(null)
+  const [livePath, setLivePath] = useState(null) // { d, strokeWidth }
 
-  const width = COLS * CELL_SIZE
+  const width  = COLS * CELL_SIZE
   const height = ROWS * CELL_SIZE
 
   const cellMap = useMemo(() => {
@@ -187,7 +182,6 @@ export default function Canvas({
   }, [placedSegments])
 
   // ── Coordinate helpers ───────────────────────────────────────────
-  // Returns raw SVG pixel coords {x, y}, clamped to canvas bounds
   const pointToSVG = useCallback((clientX, clientY, svgEl) => {
     try {
       const pt = svgEl.createSVGPoint()
@@ -201,7 +195,6 @@ export default function Canvas({
     } catch { return null }
   }, [width, height])
 
-  // Returns snapped cell {col, row}, or null if out of bounds
   const pointToCell = useCallback((clientX, clientY, svgEl) => {
     const p = pointToSVG(clientX, clientY, svgEl)
     if (!p) return null
@@ -211,7 +204,6 @@ export default function Canvas({
     return null
   }, [pointToSVG])
 
-  // Returns the appropriate position object based on snap mode
   const pointToPos = useCallback((clientX, clientY, svgEl) => {
     if (snapToGrid) {
       const cell = pointToCell(clientX, clientY, svgEl)
@@ -219,7 +211,6 @@ export default function Canvas({
     } else {
       const p = pointToSVG(clientX, clientY, svgEl)
       if (!p) return null
-      // Clamp so segment footprint stays within canvas, snap to nearest pixel
       const seg = activeSegment
       if (seg) {
         const [fpCols, fpRows] = seg.footprint
@@ -235,14 +226,69 @@ export default function Canvas({
     }
   }, [snapToGrid, pointToCell, pointToSVG, activeSegment, width, height])
 
-  // Resolve a pos object to a pixel origin {x, y}
   const posToPixel = useCallback((pos) => {
     if (!pos) return null
     if (pos.snapped) return { x: pos.col * CELL_SIZE, y: pos.row * CELL_SIZE }
     return { x: pos.x, y: pos.y }
   }, [])
 
-  // ── Drag ─────────────────────────────────────────────────────────
+  // ── Brush drawing ────────────────────────────────────────────────
+  // Minimum distance (in SVG px) between recorded points — keeps path
+  // data compact and prevents jitter at low cursor speeds.
+  const MIN_DIST = 4
+
+  const handleBrushDown = useCallback((e) => {
+    if (!brushMode || e.button !== 0) return
+    e.preventDefault()
+    const svg = svgRef.current
+    const p = pointToSVG(e.clientX, e.clientY, svg)
+    if (!p) return
+
+    isDrawingRef.current = true
+    pointsRef.current = [p]
+    setLivePath({ d: `M ${p.x.toFixed(1)},${p.y.toFixed(1)}`, strokeWidth: defaultStrokeWidth })
+
+    const handleMove = (ev) => {
+      if (!isDrawingRef.current) return
+      const pt = pointToSVG(ev.clientX, ev.clientY, svg)
+      if (!pt) return
+      const last = pointsRef.current[pointsRef.current.length - 1]
+      const dx = pt.x - last.x, dy = pt.y - last.y
+      if (Math.sqrt(dx * dx + dy * dy) < MIN_DIST) return
+      pointsRef.current = [...pointsRef.current, pt]
+      const d = catmullRomToBezier(pointsRef.current)
+      setLivePath({ d, strokeWidth: defaultStrokeWidth })
+    }
+
+    const handleUp = () => {
+      window.removeEventListener('mousemove', handleMove)
+      window.removeEventListener('mouseup', handleUp)
+      if (!isDrawingRef.current) return
+      isDrawingRef.current = false
+      const pts = pointsRef.current
+      if (pts.length >= 2) {
+        const d = catmullRomToBezier(pts)
+        // Compute bbox for export
+        const xs = pts.map(p => p.x), ys = pts.map(p => p.y)
+        onAddStroke?.({
+          strokeId: `stroke-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          d,
+          strokeWidth: defaultStrokeWidth,
+          minX: Math.min(...xs),
+          minY: Math.min(...ys),
+          maxX: Math.max(...xs),
+          maxY: Math.max(...ys),
+        })
+      }
+      pointsRef.current = []
+      setLivePath(null)
+    }
+
+    window.addEventListener('mousemove', handleMove)
+    window.addEventListener('mouseup', handleUp)
+  }, [brushMode, defaultStrokeWidth, pointToSVG, onAddStroke])
+
+  // ── Segment drag ─────────────────────────────────────────────────
   const handleDragStart = useCallback((placementId, e) => {
     const svg = e.target.closest('svg')
     dragRef.current = { placementId, svg }
@@ -253,7 +299,6 @@ export default function Canvas({
       const ps = placedSegments.find(p => p.placementId === dragRef.current.placementId)
       const seg = ps ? segmentDefs.find(s => s.id === ps.segmentId) : null
       if (!seg) return
-
       if (snapToGrid) {
         const cell = pointToCell(ev.clientX, ev.clientY, dragRef.current.svg)
         setDragPos(cell ? { snapped: true, col: cell.col, row: cell.row } : null)
@@ -285,15 +330,9 @@ export default function Canvas({
               const [fpCols, fpRows] = seg.footprint
               const fitsGrid = cell.col + fpCols <= COLS && cell.row + fpRows <= ROWS
               const destKey = `${cell.col}-${cell.row}`
-              const destCount = (cellMap[destKey] || [])
-                .filter(p => p.placementId !== dragRef.current.placementId).length
+              const destCount = (cellMap[destKey] || []).filter(p => p.placementId !== dragRef.current.placementId).length
               if (fitsGrid && destCount < 3) {
-                onMove?.(dragRef.current.placementId, {
-                  cellCol: cell.col,
-                  cellRow: cell.row,
-                  x: cell.col * CELL_SIZE,
-                  y: cell.row * CELL_SIZE,
-                })
+                onMove?.(dragRef.current.placementId, { cellCol: cell.col, cellRow: cell.row, x: cell.col * CELL_SIZE, y: cell.row * CELL_SIZE })
               }
             }
           } else {
@@ -304,12 +343,7 @@ export default function Canvas({
               const maxY = ROWS * CELL_SIZE - fpRows * CELL_SIZE
               const px = Math.round(Math.max(0, Math.min(maxX, p.x - (fpCols * CELL_SIZE) / 2)))
               const py = Math.round(Math.max(0, Math.min(maxY, p.y - (fpRows * CELL_SIZE) / 2)))
-              onMove?.(dragRef.current.placementId, {
-                cellCol: Math.floor(px / CELL_SIZE),
-                cellRow: Math.floor(py / CELL_SIZE),
-                x: px,
-                y: py,
-              })
+              onMove?.(dragRef.current.placementId, { cellCol: Math.floor(px / CELL_SIZE), cellRow: Math.floor(py / CELL_SIZE), x: px, y: py })
             }
           }
         }
@@ -324,60 +358,47 @@ export default function Canvas({
 
   // ── Hover ────────────────────────────────────────────────────────
   const handleMouseMove = useCallback((e) => {
-    if (dragRef.current) return
+    if (dragRef.current || brushMode) return
     if (!activeSegment) { setHoverPos(null); return }
     setHoverPos(pointToPos(e.clientX, e.clientY, e.currentTarget))
-  }, [activeSegment, pointToPos])
+  }, [activeSegment, brushMode, pointToPos])
 
   const handleMouseLeave = useCallback(() => {
     if (!dragRef.current) setHoverPos(null)
   }, [])
 
-  // ── Click ────────────────────────────────────────────────────────
+  // ── Canvas click (segment placement / deselect) ──────────────────
   const handleCanvasClick = useCallback((e) => {
-    if (dragRef.current) return
+    if (brushMode || dragRef.current) return
     const pos = pointToPos(e.clientX, e.clientY, e.currentTarget)
     if (!pos) return
     if (activeSegment) {
       const [fpCols, fpRows] = activeSegment.footprint
       if (snapToGrid) {
         if (pos.col + fpCols > COLS || pos.row + fpRows > ROWS) return
-        const key = `${pos.col}-${pos.row}`
-        if ((cellMap[key] || []).length >= 3) return
-        onPlace?.({
-          cellCol: pos.col,
-          cellRow: pos.row,
-          x: pos.col * CELL_SIZE,
-          y: pos.row * CELL_SIZE,
-        })
+        if ((cellMap[`${pos.col}-${pos.row}`] || []).length >= 3) return
+        onPlace?.({ cellCol: pos.col, cellRow: pos.row, x: pos.col * CELL_SIZE, y: pos.row * CELL_SIZE })
       } else {
-        // No cell limit check in free mode
-        onPlace?.({
-          cellCol: Math.floor(pos.x / CELL_SIZE),
-          cellRow: Math.floor(pos.y / CELL_SIZE),
-          x: Math.round(pos.x),
-          y: Math.round(pos.y),
-        })
+        onPlace?.({ cellCol: Math.floor(pos.x / CELL_SIZE), cellRow: Math.floor(pos.y / CELL_SIZE), x: Math.round(pos.x), y: Math.round(pos.y) })
       }
     } else {
       onSelect?.(null)
+      onSelectStroke?.(null)
     }
-  }, [activeSegment, snapToGrid, cellMap, onPlace, onSelect, pointToPos])
+  }, [brushMode, activeSegment, snapToGrid, cellMap, onPlace, onSelect, onSelectStroke, pointToPos])
 
-  // ── Ghost data ───────────────────────────────────────────────────
+  // ── Ghost preview ────────────────────────────────────────────────
   const ghostPixel = useMemo(() => {
-    if (!hoverPos || !activeSegment) return null
+    if (!hoverPos || !activeSegment || brushMode) return null
     const pixel = posToPixel(hoverPos)
     if (!pixel) return null
     const [fpCols, fpRows] = activeSegment.footprint
     if (pixel.x + fpCols * CELL_SIZE > width || pixel.y + fpRows * CELL_SIZE > height) return null
-    const fits = snapToGrid
-      ? (cellMap[`${hoverPos.col}-${hoverPos.row}`] || []).length < 3
-      : true
+    const fits = snapToGrid ? (cellMap[`${hoverPos.col}-${hoverPos.row}`] || []).length < 3 : true
     return { ...pixel, fits }
-  }, [hoverPos, activeSegment, snapToGrid, cellMap, posToPixel, width, height])
+  }, [hoverPos, activeSegment, brushMode, snapToGrid, cellMap, posToPixel, width, height])
 
-  // ── Drag preview data ────────────────────────────────────────────
+  // ── Drag preview ─────────────────────────────────────────────────
   const dragPreviewPixel = useMemo(() => {
     if (!dragPos || !dragRef.current) return null
     const ps = placedSegments.find(p => p.placementId === dragRef.current?.placementId)
@@ -387,31 +408,35 @@ export default function Canvas({
     if (!pixel) return null
     const [fpCols, fpRows] = seg.footprint
     const fits = snapToGrid
-      ? (() => {
-          if (!dragPos.snapped) return true
+      ? (!dragPos.snapped ? true : (() => {
           if (dragPos.col + fpCols > COLS || dragPos.row + fpRows > ROWS) return false
-          const destKey = `${dragPos.col}-${dragPos.row}`
-          return (cellMap[destKey] || []).filter(p => p.placementId !== ps.placementId).length < 3
-        })()
+          return (cellMap[`${dragPos.col}-${dragPos.row}`] || []).filter(p => p.placementId !== ps.placementId).length < 3
+        })())
       : true
     return { x: pixel.x, y: pixel.y, w: fpCols * CELL_SIZE, h: fpRows * CELL_SIZE, fits }
   }, [dragPos, placedSegments, cellMap, snapToGrid, posToPixel])
 
   const isDragging = !!dragRef.current
 
+  // Cursor logic
+  const cursor = brushMode
+    ? (isDrawingRef.current ? 'crosshair' : 'crosshair')
+    : isDragging ? 'grabbing'
+    : activeSegment ? 'crosshair'
+    : 'default'
+
   return (
     <svg
+      ref={svgRef}
       width="100%"
       height="100%"
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="xMidYMid meet"
+      onMouseDown={handleBrushDown}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={handleCanvasClick}
-      style={{
-        display: 'block',
-        cursor: isDragging ? 'grabbing' : activeSegment ? 'crosshair' : 'default',
-      }}
+      style={{ display: 'block', cursor }}
     >
       <rect width={width} height={height} fill="#0f0f0f" />
 
@@ -424,6 +449,39 @@ export default function Canvas({
             <line key={`h${i}`} x1={0} y1={i * CELL_SIZE} x2={width} y2={i * CELL_SIZE} />
           ))}
         </g>
+      )}
+
+      {/* Committed freehand strokes */}
+      {freehandStrokes.map(stroke => {
+        const isSelected = stroke.strokeId === selectedStrokeId
+        return (
+          <path
+            key={stroke.strokeId}
+            d={stroke.d}
+            fill="none"
+            stroke={isSelected ? '#60aaff' : 'white'}
+            strokeWidth={stroke.strokeWidth}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+            onClick={(e) => { e.stopPropagation(); onSelectStroke?.(isSelected ? null : stroke.strokeId) }}
+            style={{ cursor: 'pointer' }}
+          />
+        )
+      })}
+
+      {/* In-progress freehand stroke */}
+      {livePath && (
+        <path
+          d={livePath.d}
+          fill="none"
+          stroke="rgba(255,255,255,0.6)"
+          strokeWidth={livePath.strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+          style={{ pointerEvents: 'none' }}
+        />
       )}
 
       {/* Placed segments */}
@@ -462,14 +520,11 @@ export default function Canvas({
       {/* Drag destination preview */}
       {dragPreviewPixel && (
         <rect
-          x={dragPreviewPixel.x}
-          y={dragPreviewPixel.y}
-          width={dragPreviewPixel.w}
-          height={dragPreviewPixel.h}
+          x={dragPreviewPixel.x} y={dragPreviewPixel.y}
+          width={dragPreviewPixel.w} height={dragPreviewPixel.h}
           fill={dragPreviewPixel.fits ? 'rgba(96,170,255,0.08)' : 'rgba(255,80,80,0.06)'}
           stroke={dragPreviewPixel.fits ? '#60aaff' : 'rgba(255,80,80,0.4)'}
-          strokeWidth="1"
-          strokeDasharray="4 3"
+          strokeWidth="1" strokeDasharray="4 3"
           style={{ pointerEvents: 'none' }}
         />
       )}
